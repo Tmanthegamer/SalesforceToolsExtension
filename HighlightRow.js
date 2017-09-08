@@ -1,1 +1,0 @@
-$( document.body ).append('<style>\ntr.dataRow:hover{\n    background:#d6e2ec;\n}\n</style>');
