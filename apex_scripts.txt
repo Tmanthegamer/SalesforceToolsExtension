@@ -1,0 +1,56 @@
+//APEX SCRIPTS
+
+// Build a map using an sobject's name
+public static Map<String,Schema.SObjectField> getSObjectMap( String sobjectName ) {
+
+    SObjectType obj = Schema.getGlobalDescribe().get('Account');
+    Map<String,Schema.SObjectField> objFieldMap = obj.getDescribe().fields.getMap();
+    Map<String,Schema.SObjectField> fixedObjFieldMap = new Map<string,Schema.SObjectField>();
+
+    // Adjust the API names to not have the '__c' at the end of it
+    for( String key : objFieldMap.keySet() ) {
+        String name = objFieldMap.get( key ).getDescribe().getName();
+        name.replace( '__c', '' );
+        fixedObjFieldMap.put( name, objFieldMap.get( key ) );
+    }
+
+    return fixedObjFieldMap;
+}
+
+// Get all the labels associated to an object within the list of string given and its delimiter
+public static String getDesiredLabelList( String sobjectName, String stringList, String delimiter ) {
+
+    Map<String,Schema.SObjectField> fixedObjFieldMap = getSObjectMap( sobjectName );
+    List<String> splitStrings = stringList.split( delimiter );
+
+    String allLabels = '';
+    for( String apiName : splitStrings ) {
+        Schema.SObjectField field = fixedObjFieldMap.get( apiName );
+        allLabels += field.getDescribe().getLabel() + '&';
+    }
+    allLabels = allLabels.removeEnd( '&' );
+
+    return allLabels;
+}
+
+public static String buildLabelList( String desiredSobject, String stringList, String delimiter ) {
+    // string list example
+    //Account.Name;Account.Id;Account.BillingCity;Account.BillingStreet;Opportunity.StageName
+    List<String> splitStrings = stringList.split( delimiter );
+    List<String> desiredApis = new List<String>();
+
+    for( String str : splitStrings ) {
+        // We are assuming that the strings are similar to 'Account.Name'
+        List<String> sobjectAndApiName = str.split( '.' );
+
+        // Only add the desired sobjects
+        if( sobjectAndApiName[0] == desiredSobject ) {
+            desiredApis.add( sobjectAndApiName[1] );
+        }
+    }
+
+    String apiList = String.join( desiredApis, delimiter );
+    String labelList = getDesiredLabelList( desiredSobject, apiList, delimiter );
+
+    return labelList;
+}
